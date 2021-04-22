@@ -1,0 +1,72 @@
+#version 330 core
+
+// construct input layout for the corresponding attributes
+// (vertexPosition_modelspace, vertexNormal_modelspace, vertexUV)
+layout(location = 0) in vec3 vertexPosition_modelspace;
+layout(location = 1) in vec3 vertexNormal_modelspace;
+layout(location = 2) in vec2 vertexUV;
+
+// model view projection matrix 
+uniform mat4 M;
+uniform mat4 V;
+uniform mat4 P;
+uniform mat4 depthMVP;
+
+uniform int textureflag;
+uniform float wave0time;
+uniform vec3 wave0point;
+uniform float wave1time;
+uniform vec3 wave1point;
+uniform vec3 cameraPos;
+
+// Task 3.2a VS: propagate vertex coordinates (world space) to fragment shader
+out vec4 vertexPosition_worldspace;
+out vec4 reflectionXY;
+out vec4 ShadowCoord;
+out vec3 vertex_position_cameraspace;
+out vec3 vertex_normal_cameraspace;
+out vec4 coordinates_modelspace;
+out vec2 vertex_UV;
+out vec3 cameraDir;
+
+// Task 4.1b VS: 
+
+void main()
+{
+    
+    float y = 0;
+    float y1 = 0;
+    if(textureflag == 4 && wave0time>0){
+        float A = 1.03;
+        float dist = length(vertexPosition_modelspace - wave0point);
+        if(0.15 * wave0time + 0.12 > dist){
+            y = (1-dist)*(A/pow(A , wave0time ))/40 * sin((wave0time/0.2) - (dist/0.03));
+        }
+    }
+    if(textureflag == 4 && wave1time>0){
+        float A1 = 1.1;
+        float dist1 = length(vertexPosition_modelspace - wave1point);
+        if(0.15 * wave1time + 0.12 > dist1){
+            y1 = (1-dist1)*(A1/pow(A1, wave1time ))/40 * sin((wave1time/0.2) - (dist1/0.03));
+
+        }
+
+   }
+
+    reflectionXY = P * V * M * vec4(vertexPosition_modelspace.x,vertexPosition_modelspace.y+y+y1,vertexPosition_modelspace.z, 1);
+    gl_Position =  reflectionXY;
+    ShadowCoord = depthMVP * vec4(vertexPosition_modelspace,1);
+
+    
+    cameraDir = normalize(vec3(P * V * mat4(1) * vec4(cameraPos,1))-vec3(reflectionXY));
+    
+
+    vertexPosition_worldspace =  P * V * M * vec4(vertexPosition_modelspace.x,vertexPosition_modelspace.y+y,vertexPosition_modelspace.z, 1);
+
+
+    vertex_position_cameraspace = vec3(V*M*vec4(vertexPosition_modelspace.x,vertexPosition_modelspace.y+y,vertexPosition_modelspace.z, 1)); 
+
+    vertex_normal_cameraspace = mat3(transpose(inverse(V*M))) * vertexNormal_modelspace; 
+
+    vertex_UV = vertexUV;
+}

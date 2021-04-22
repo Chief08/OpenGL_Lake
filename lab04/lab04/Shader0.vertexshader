@@ -1,0 +1,54 @@
+#version 330 core
+
+// construct input layout for the corresponding attributes
+// (vertexPosition_modelspace, vertexNormal_modelspace, vertexUV)
+layout(location = 0) in vec3 vertexPosition_modelspace;
+layout(location = 1) in vec3 vertexNormal_modelspace;
+layout(location = 2) in vec2 vertexUV;
+
+// model view projection matrix 
+uniform mat4 M;
+uniform mat4 V;
+uniform mat4 P;
+uniform mat4 depthMVP;
+
+uniform int textureflag;
+uniform float wave0time;
+uniform vec3 wave0point;
+uniform vec4 plane;
+uniform float wave1time;
+uniform vec3 wave1point;
+
+// Task 3.2a VS: propagate vertex coordinates (world space) to fragment shader
+out vec4 vertexPosition_worldspace;
+out vec4 reflexCoord;
+out vec3 vertex_position_cameraspace;
+out vec3 vertex_normal_cameraspace;
+out vec4 coordinates_modelspace;
+out vec2 vertex_UV;
+out float lakeflag;
+
+// Task 4.1b VS: 
+
+void main()
+{
+    
+    gl_Position =  P * V * M * vec4(vertexPosition_modelspace.x,vertexPosition_modelspace.y,vertexPosition_modelspace.z, 1);
+    reflexCoord = vec4(vertexPosition_modelspace,1);
+
+    vertexPosition_worldspace=M*vec4(vertexPosition_modelspace,1);
+
+    lakeflag=0;
+    if(dot(vertexPosition_worldspace,plane)>0.01) {
+        lakeflag = 1;
+    }
+
+    vertexPosition_worldspace =  P * V * M * vec4(vertexPosition_modelspace.x,vertexPosition_modelspace.y,vertexPosition_modelspace.z, 1);
+
+
+    vertex_position_cameraspace = vec3(V*M*vec4(vertexPosition_modelspace.x,vertexPosition_modelspace.y,vertexPosition_modelspace.z, 1)); 
+
+    vertex_normal_cameraspace = mat3(transpose(inverse(V*M))) * vertexNormal_modelspace; 
+
+    vertex_UV = vertexUV;
+}
